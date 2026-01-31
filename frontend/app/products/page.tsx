@@ -20,7 +20,7 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       try {
         const data = await getProducts();
-        setProducts(data);
+        setProducts(data as Product[]);
       } catch (err) {
         setError("Failed to load products");
       } finally {
