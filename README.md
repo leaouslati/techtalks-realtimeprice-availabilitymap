@@ -13,3 +13,25 @@ This project is a map-based platform designed for Lebanon and the MENA region to
 - Frontend: Next.js
 - Backend: Java
 
+### versions 
+- Java 17
+- Spring Boot 4.0.2
+- Maven (via Maven Wrapper)
+- H2 Database (in-memory)
+- Runs on port 8080
+
+## How to Run the Backend
+
+### Requirements
+- Java 17
+
+> Maven is NOT required (Maven Wrapper is included)
+
+### Run backend
+on terminal:
+- cd backend
+- ./mvnw spring-boot:run
+- Backend runs on:
+  http://localhost:8080
+
+
