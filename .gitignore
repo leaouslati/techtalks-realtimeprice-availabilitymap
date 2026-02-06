@@ -9,10 +9,14 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+node_modules/
 # testing
 /coverage
+# Maven target folder
+backend/target/
 
+# Next.js build folder
+frontend/.next/
 # next.js
 /.next/
 /out/
