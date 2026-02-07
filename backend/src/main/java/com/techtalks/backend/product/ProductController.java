@@ -1,34 +1,26 @@
 package com.techtalks.backend.product;
 import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api")
 public class ProductController {
-    private ProductService productService;
+    private final ProductService productService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
-
+    @GetMapping("/products")
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
-
-    public Product getProductById(String id) {
-        return productService.getProductById(Long.valueOf(id));
-    }
-
-    public static void main(String[] args) {
-        ProductService service = new ProductService();
-        ProductController controller = new ProductController(service);
-
-        List<Product> products = controller.getAllProducts();
-        System.out.println("All Products:");
-        for (Product p : products) {
-            System.out.println(p);
-        }
-
-        String testId = "123"; // example ID
-        Product product = controller.getProductById(testId);
-        System.out.println("\nProduct with ID " + testId + ":");
-        System.out.println(product);
+    @GetMapping("/products/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
     }
 
 }
