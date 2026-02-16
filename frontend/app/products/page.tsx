@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getProducts } from "@/services/api";
+import Link from "next/link";  // ← ADD THIS IMPORT
 
 type Product = {
   id: number;
@@ -59,6 +60,23 @@ export default function ProductsPage() {
           <p>
             <strong>Location:</strong> {product.location}
           </p>
+          {/* ADD THIS BUTTON */}
+          <Link 
+            href={`/map?product=${product.id}`}
+            style={{
+              display: 'inline-block',
+              marginTop: '10px',
+              padding: '8px 16px',
+              background: '#28a745',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            👀 View on Map
+          </Link>
         </div>
       ))}
     </div>
