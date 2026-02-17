@@ -1,7 +1,8 @@
-package com.example.demo.entity;
-
+package com.example.demo.product;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.example.demo.entity.Shop;
+
 
 @Entity
 @Table(name = "products")
