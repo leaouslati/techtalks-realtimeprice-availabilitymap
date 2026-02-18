@@ -1,5 +1,4 @@
 package com.example.demo.controller;
-
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,7 +10,7 @@ import com.example.demo.entity.Shop;
 import com.example.demo.service.ShopService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/shops")
 public class ShopController {
 
     private final ShopService shopService;
@@ -20,12 +19,13 @@ public class ShopController {
         this.shopService = shopService;
     }
 
-    @GetMapping("/shops")
+    @GetMapping
     public List<Shop> getAllShops() {
         return shopService.getAllShops();
     }
 
-    @GetMapping("/shops/{id}")
+
+    @GetMapping("/{id}")
     public Shop getShopById(@PathVariable Long id) {
         return shopService.getShopById(id);
     }
