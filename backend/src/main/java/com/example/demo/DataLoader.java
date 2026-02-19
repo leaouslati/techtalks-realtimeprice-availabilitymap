@@ -8,6 +8,7 @@ import com.example.demo.entity.Shop;
 import com.example.demo.product.Product;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.ShopRepository;
+
 @Component
 public class DataLoader implements CommandLineRunner {
     private final ShopRepository shopRepository;
@@ -21,13 +22,13 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        // Create Shops
+        // Create Shops with real Lebanon coordinates
         Shop techStore = new Shop(
                 "TechStore",
-                "Hamra Street",
+                "Hamra Street, Beirut",
                 "70123456",
-                5.0,
-                10.0,
+                33.8938,   // latitude  (Hamra, Beirut)
+                35.4788,   // longitude
                 false,
                 "Beirut",
                 "Electronics"
@@ -35,10 +36,10 @@ public class DataLoader implements CommandLineRunner {
 
         Shop fashionHub = new Shop(
                 "FashionHub",
-                "Main Road",
+                "Al Mina Street, Tripoli",
                 "71111222",
-                15.0,
-                20.0,
+                34.4367,   // latitude  (Tripoli)
+                35.8497,   // longitude
                 true,
                 "Tripoli",
                 "Clothing"
@@ -53,7 +54,6 @@ public class DataLoader implements CommandLineRunner {
                 1200,
                 "Electronics",
                 true
-
         );
 
         Product tshirt = new Product(
@@ -64,12 +64,12 @@ public class DataLoader implements CommandLineRunner {
         );
 
         // Link products to shops
-laptop.setShops(List.of(techStore));
-tshirt.setShops(List.of(fashionHub));
+        laptop.setShops(List.of(techStore));
+        tshirt.setShops(List.of(fashionHub));
+
         productRepository.save(laptop);
         productRepository.save(tshirt);
 
         System.out.println("Database populated!");
     }
 }
-

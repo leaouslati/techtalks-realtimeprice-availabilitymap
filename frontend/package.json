@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint"
   },
- "dependencies": {
+  "dependencies": {
+    "@vis.gl/react-google-maps": "^1.7.1",
     "next": "16.1.5",
     "react": "19.2.3",
     "react-dom": "19.2.3"
