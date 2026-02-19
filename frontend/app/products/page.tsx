@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getProducts } from "@/services/api";
+import { useRouter } from "next/navigation";
 
 type Product = {
   id: number;
@@ -11,6 +12,7 @@ type Product = {
   location: string;
   shopName?: string;
   available?: boolean;
+  shopId?: number;
   lastUpdated?: string;
 };
 
@@ -23,6 +25,7 @@ type AvailabilityChange = {
 };
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -107,8 +110,8 @@ export default function ProductsPage() {
     return () => clearInterval(interval);
   }, [products]);
 
-  const categories = ["all", ...new Set(products.map((p) => p.category))];
-  const locations = ["all", ...new Set(products.map((p) => p.location))];
+  const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
+const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).filter(Boolean)))];
 
   const filteredProducts = products
     .filter((product) => {
@@ -381,6 +384,29 @@ export default function ProductsPage() {
                   ></span>
                   {product.available ? "Available" : "Unavailable"}
                 </div>
+                <button
+  onClick={() => router.push(`/map?shop=${product.shopId}`)}
+  className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+  style={{
+    background: "#E3F2FD",
+    color: "#1976D2",
+    border: "1.5px solid #90CAF9",
+  }}
+  onMouseEnter={e => {
+    (e.currentTarget as HTMLButtonElement).style.background = "#1976D2";
+    (e.currentTarget as HTMLButtonElement).style.color = "white";
+  }}
+  onMouseLeave={e => {
+    (e.currentTarget as HTMLButtonElement).style.background = "#E3F2FD";
+    (e.currentTarget as HTMLButtonElement).style.color = "#1976D2";
+  }}
+>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle cx="12" cy="9" r="2.5"/>
+  </svg>
+  View on Map
+</button>
               </div>
 
               {/* Product Footer */}
