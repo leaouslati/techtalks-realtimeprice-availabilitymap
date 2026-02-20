@@ -11,18 +11,30 @@ import java.time.LocalDateTime;
     private LocalDateTime updatedAt;
 
     //contructor
-    public PriceUpdateResponse(String string, Long long1, Long long2, Double oldPrice2, Double double1, LocalDateTime localDateTime){
+  public PriceUpdateResponse(
+        String type,
+        Long productId,
+        Long shopId,
+        Double oldPrice,
+        Double newPrice,
+        LocalDateTime updatedAt) {
 
-    }
+    this.type = type;
+    this.productId = productId;
+    this.shopId = shopId;
+    this.oldPrice = oldPrice;
+    this.newPrice = newPrice;
+    this.updatedAt = updatedAt;
+}
 
     //getters
     public String getType(){
         return type;
     }
-    public Long getProductID(){
+    public Long getProductId(){
         return productId;
     }
-    public Long getShopID(){
+    public Long getShopId(){
         return shopId;
     }
     public Double getOldPrice(){

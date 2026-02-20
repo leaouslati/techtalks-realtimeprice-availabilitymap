@@ -21,21 +21,24 @@ public class PriceService {
 }
     
 @Transactional
-public PriceUpdateResponse updatePrice(UpdatePriceRequest request) {
+public PriceUpdateResponse updatePrice(
+        Long shopId,
+        Long productId,
+        UpdatePriceRequest request){
 
     Price price = priceRepository
-        .findByProductIdAndShopId(request.getProductID(), request.getShopID())
+        .findByProduct_IdAndShop_Id(productId, shopId)
         .orElseThrow(() -> new RuntimeException("Price not found"));
 
-    if (request.getNewPrice() == 0 || request.getNewPrice() <= 0) {
-        throw new RuntimeException("Invalid price");
-    }
+   if (request.getNewPrice() <= 0) {
+    throw new IllegalArgumentException("Price must be greater than zero");
+}
 
     Double oldPrice = price.getPrice();
 
     price.setPrice(request.getNewPrice());
     price.setUpdatedAt(LocalDateTime.now());
-    price.setUpdatedBy(request.getUserID());
+    price.setUpdatedBy(1L);//replace with authenticated user ID
 
     priceRepository.save(price);
 
@@ -50,26 +53,29 @@ public PriceUpdateResponse updatePrice(UpdatePriceRequest request) {
 }
 
 @Transactional
-public PriceUpdateResponse updateAvailability(UpdateAvailabilityRequest request) {
+public PriceUpdateResponse updateAvailability(
+        Long shopId,
+        Long productId,
+        UpdateAvailabilityRequest request){
 
     Price price = priceRepository
-        .findByProductIdAndShopId(request.getProductID(), request.getShopID())
+        .findByProduct_IdAndShop_Id(productId, shopId)
         .orElseThrow(() -> new RuntimeException("Price not found"));
 
     price.setAvailable(request.getAvailable());
     price.setUpdatedAt(LocalDateTime.now());
-    price.setUpdatedBy(request.getUserID());
+    price.setUpdatedBy(1L);//replace with authenticated user ID
 
     priceRepository.save(price);
 
     return new PriceUpdateResponse(
-        "AVAILABILITY_UPDATE",
-        price.getProduct().getId(),
-        price.getShop().getId(),
-        price.getPrice(),
-        price.getPrice(),
-        price.getUpdatedAt()
-    );
+    "AVAILABILITY_UPDATE",
+    price.getProduct().getId(),
+    price.getShop().getId(),
+    null,
+    null,
+    price.getUpdatedAt()
+);
 }
 }
 
