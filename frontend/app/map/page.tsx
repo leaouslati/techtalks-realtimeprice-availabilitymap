@@ -214,16 +214,8 @@ useEffect(() => {
             zIndex: 10,
           }}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-              style={{ background: "#2563eb" }}
-            >
-              S
-            </div>
-            <span className="font-bold text-slate-800 text-lg">ShopMap</span>
-            <span className="text-xs text-slate-400 font-medium">Lebanon</span>
-          </div>
+        <span className="text-sm font-semibold text-slate-600">🇱🇧 Lebanon</span>
+        
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span
               className="w-2 h-2 rounded-full inline-block"
