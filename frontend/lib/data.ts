@@ -21,3 +21,27 @@ export const mockProducts = [
     location: "Saida",
   },
 ];
+
+export const mockShops =[
+  {
+    id: 1,
+    name: "Beirut Pharmacy",
+    address: "Salim Sleem, Beirut",
+    category: "Pharmacy",
+    location: "Beirut"
+  },
+  {
+    id: 2,
+    name: "Tripoli Grocery",
+    address: "Al mina street, Tripoli",
+    category: "Grocery",
+    location: "Tripoli"
+  },
+  {
+    id: 3,
+    name: "Jbeil Electronics",
+    address: "Cornishe Street, Jbeil",
+    category: "Electronics",
+    location: "Jbeil"
+  }
+]
