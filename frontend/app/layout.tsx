@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ShopMap Lebanon",
-  description: "Find shops and products near you",
+  title: "GeoCart Lebanon",
+  description: "Real-time prices & availability near you",
 };
 
 export default function RootLayout({
@@ -48,7 +48,7 @@ export default function RootLayout({
               display: "flex", alignItems: "center", justifyContent: "center",
               fontWeight: "bold", fontSize: "16px"
             }}>S</div>
-            <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "16px" }}>ShopMap</span>
+            <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "16px" }}>GeoCart</span>
           </Link>
           <div style={{ display: "flex", gap: "8px" }}>
             {[
@@ -56,6 +56,7 @@ export default function RootLayout({
               { href: "/map", label: "🗺️ Map" },
               { href: "/shops", label: "🏪 Shops" },
               { href: "/products", label: "📦 Products" },
+              { href: "/profile", label: "👤 Profile" },
             ].map(({ href, label }) => (
               <Link key={href} href={href} style={{
                 padding: "6px 14px",
@@ -72,6 +73,41 @@ export default function RootLayout({
         </nav>
 
         {children}
+       {/* Footer */}
+<footer style={{
+  background: "#1e293b",
+  padding: "32px 24px",
+  textAlign: "center",
+}}>
+  <div style={{ 
+    fontSize: "20px", 
+    fontWeight: 700, 
+    color: "white", 
+    marginBottom: "8px" 
+  }}>
+    🇱🇧 GeoCart Lebanon
+  </div>
+  <p style={{ 
+    fontSize: "13px", 
+    color: "#94a3b8", 
+    margin: "0 0 16px" 
+  }}>
+    Real-time prices &amp; availability across Lebanon
+  </p>
+  <div style={{ 
+    width: "40px", 
+    height: "2px", 
+    background: "#2563eb", 
+    margin: "0 auto 16px" 
+  }} />
+  <p style={{ 
+    fontSize: "12px", 
+    color: "#64748b", 
+    margin: 0 
+  }}>
+    © 2026 GeoCart. All rights reserved.
+  </p>
+</footer>
       </body>
     </html>
   );
