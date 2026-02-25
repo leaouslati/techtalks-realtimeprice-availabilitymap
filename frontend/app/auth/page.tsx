@@ -83,7 +83,7 @@ export default function AuthPage() {
         <div className={styles.header}>
           <div className={styles.brandRow}>
             <span className={styles.brandIcon}>📍</span>
-            <h1 className={styles.brandName}>SouqMap</h1>
+            <h1 className={styles.brandName}>GeoCart</h1>
           </div>
           <p className={styles.tagline}>
             {mode === "login"

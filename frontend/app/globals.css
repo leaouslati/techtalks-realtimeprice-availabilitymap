@@ -3,7 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+   --color-primary: #2563eb;        /* Main brand color — navbar, buttons */
+  --color-secondary: #0ea5e9;      /* Highlights, accents */
+  --color-bg: #E3F2FD;             /* Light blue background */
+  --color-success: #16a34a;        /* Available — green */
+  --color-error: #ef4444;          /* Unavailable — red */
+  --color-highlight: #fef9c3;      /* Recently updated indicator (NOT full card) */
 }
+
 
 @theme inline {
   --color-background: var(--background);
@@ -20,7 +28,13 @@
 }
 
 body {
-  background: var(--background);
+   /* Changed from var(--background) to var(--color-bg) to apply 
+     GeoCart's light blue brand background across all pages */
+  background: var(--color-bg);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+/* Apply GeoCart light blue background to all pages */
+html {
+  background: var(--color-bg);
 }
