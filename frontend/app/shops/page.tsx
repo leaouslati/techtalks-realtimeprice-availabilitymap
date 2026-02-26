@@ -13,6 +13,7 @@ type Shop = {
   category: string;
   location: string;
   lastUpdated?: string;
+  rating?: number;
 };
 
 export default function ShopsPage() {
@@ -33,6 +34,7 @@ export default function ShopsPage() {
         const enriched = data.map((shop: Shop) => ({
           ...shop,
           lastUpdated: shop.lastUpdated || new Date().toISOString(),
+           rating: shop.rating || 0,
         }));
         setShops(enriched);
       } catch (err) {
@@ -81,11 +83,13 @@ export default function ShopsPage() {
   return (
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: "#E3F2FD" }}>
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-[56px] font-bold mb-3" style={{ color: "#1976D2" }}>Shops</h1>
-          <p className="text-lg" style={{ color: "#616161" }}>Browse shops and explore their details</p>
+          <h1 className="text-5xl font-bold mb-3" style={{ color: "#1976D2" }}>Shops</h1>
+          <p className="text-lg" style={{ color: "#616161" }}>Your guide to every shop around</p>
         </div>
 
+        {/* Filter Bar */}
         <div className="rounded-xl p-6 mb-8" style={{ backgroundColor: "white", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)" }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -97,9 +101,7 @@ export default function ShopsPage() {
                 style={{ borderColor: "#BDBDBD", backgroundColor: "white", color: "#212121" }}
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === "all" ? "Select Category" : cat}
-                  </option>
+                  <option key={cat} value={cat}>{cat === "all" ? "Select Category" : cat}</option>
                 ))}
               </select>
             </div>
@@ -113,9 +115,7 @@ export default function ShopsPage() {
                 style={{ borderColor: "#BDBDBD", backgroundColor: "white", color: "#212121" }}
               >
                 {locations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc === "all" ? "Select Location" : loc}
-                  </option>
+                  <option key={loc} value={loc}>{loc === "all" ? "Select Location" : loc}</option>
                 ))}
               </select>
             </div>
@@ -140,6 +140,7 @@ export default function ShopsPage() {
           </div>
         </div>
 
+        {/* Shops Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredShops.map((shop) => (
             <div
@@ -149,7 +150,7 @@ export default function ShopsPage() {
             >
               <div className="p-6 min-h-[280px] flex flex-col justify-between">
                 <div>
-                  <h3 className="text-[20px] font-bold mb-3 truncate" style={{ color: "#212121" }}>{shop.name}</h3>
+                  <h3 className="text-[21px] font-bold mb-3 truncate" style={{ color: "#212121" }}>{shop.name}</h3>
                   <p className="text-sm mb-2" style={{ color: "#757575" }}>{shop.address}</p>
                   <p className="text-sm mb-5" style={{ color: "#757575" }}>📞 {shop.contact}</p>
                   <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-semibold" style={{ backgroundColor: shop.claimed ? "#E8F5E9" : "#FFEBEE", color: shop.claimed ? "#2E7D32" : "#C62828" }}>
@@ -170,7 +171,7 @@ export default function ShopsPage() {
                     (e.currentTarget as HTMLButtonElement).style.color = "#1976D2";
                   }}
                 >
-                  View Shop
+                  View Products
                 </button>
               </div>
 
