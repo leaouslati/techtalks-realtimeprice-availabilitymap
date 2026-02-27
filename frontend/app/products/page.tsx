@@ -195,7 +195,7 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
             Products
           </h1>
           <p className="text-lg" style={{ color: "#616161" }}>
-            Real-time prices and availability
+            Live prices. Instant availability
           </p>
         </div>
 
@@ -301,166 +301,146 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="rounded-xl overflow-hidden transition-all duration-300"
-              style={{
-                backgroundColor: "white",
-                boxShadow: priceFlash[product.id]
-                  ? "0 4px 20px rgba(25, 118, 210, 0.3)"
-                  : "0 2px 8px rgba(0, 0, 0, 0.08)",
-                transform: priceFlash[product.id]
-                  ? "translateY(-2px)"
-                  : "translateY(0)",
-                border: priceFlash[product.id]
-                  ? "2px solid #1976D2"
-                  : "2px solid transparent",
-              }}
-            >
-              {/* Recently Updated Indicator */}
-              {priceFlash[product.id] && (
-                <div
-                  className="h-1 w-full"
-                  style={{ backgroundColor: "#FFA726" }}
-                ></div>
-              )}
-
-              {/* Product Content */}
-              <div className="p-6">
-                <h3
-                  className="text-xl font-bold mb-2 truncate"
-                  style={{ color: "#212121" }}
-                >
-                  {product.name}
-                </h3>
-                <p className="text-sm mb-4" style={{ color: "#757575" }}>
-                  {product.shopName}
-                </p>
-
-                {/* Price with Animation */}
-                <div
-                  className="mb-4 py-2 rounded-lg transition-all duration-500"
-                  style={{
-                    backgroundColor: priceFlash[product.id]
-                      ? "#FFF3E0"
-                      : "transparent",
-                    transform: priceFlash[product.id]
-                      ? "scale(1.05)"
-                      : "scale(1)",
-                  }}
-                >
-                  <p
-                    className="text-3xl font-bold"
-                    style={{ color: "#1976D2" }}
-                  >
-                    ${product.price.toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Availability Badge */}
-                <div
-                  className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300"
-                  style={{
-                    backgroundColor: product.available ? "#E8F5E9" : "#FFEBEE",
-                    color: product.available ? "#2E7D32" : "#C62828",
-                    transform: availabilityFlash[product.id]
-                      ? "scale(1.1)"
-                      : "scale(1)",
-                    boxShadow: availabilityFlash[product.id]
-                      ? "0 0 0 4px rgba(25, 118, 210, 0.2)"
-                      : "none",
-                  }}
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full mr-2"
-                    style={{
-                      backgroundColor: product.available
-                        ? "#2E7D32"
-                        : "#C62828",
-                    }}
-                  ></span>
-                  {product.available ? "Available" : "Unavailable"}
-                </div>
-                <button
-  onClick={() => router.push(`/map?shop=${product.shopId}`)}
-  className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-  style={{
-    background: "#E3F2FD",
-    color: "#1976D2",
-    border: "1.5px solid #90CAF9",
-  }}
-  onMouseEnter={e => {
-    (e.currentTarget as HTMLButtonElement).style.background = "#1976D2";
-    (e.currentTarget as HTMLButtonElement).style.color = "white";
-  }}
-  onMouseLeave={e => {
-    (e.currentTarget as HTMLButtonElement).style.background = "#E3F2FD";
-    (e.currentTarget as HTMLButtonElement).style.color = "#1976D2";
-  }}
->
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-    <circle cx="12" cy="9" r="2.5"/>
-  </svg>
-  View on Map
-</button>
-              </div>
-
-              {/* Product Footer */}
+    {/* Products Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {filteredProducts.length > 0 ? (
+        filteredProducts.map((product) => (
+          <div
+            key={product.id}
+            className="rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-300 border-2 border-transparent"
+            style={{
+              backgroundColor: "white",
+              boxShadow: priceFlash[product.id]
+                ? "0 4px 20px rgba(25, 118, 210, 0.3)"
+                : "0 2px 8px rgba(0, 0, 0, 0.08)",
+              transform: priceFlash[product.id]
+                ? "translateY(-2px)"
+                : "translateY(0)",
+              border: priceFlash[product.id]
+                ? "2px solid #1976D2"
+                : "2px solid transparent",
+            }}
+          >
+            {/* Recently Updated Indicator */}
+            {priceFlash[product.id] && (
               <div
-                className="px-6 py-4"
+                className="h-1 w-full"
+                style={{ backgroundColor: "#FFA726" }}
+              ></div>
+            )}
+            {/* Product Content */}
+            <div className="p-6">
+              <h3
+                className="text-xl font-bold mb-2 truncate"
+                style={{ color: "#212121" }}
+              >
+                {product.name}
+              </h3>
+              <p className="text-sm mb-4" style={{ color: "#757575" }}>
+                {product.shopName}
+              </p>
+              {/* Price with Animation */}
+              <div
+                className="mb-4 py-2 rounded-lg transition-all duration-500"
                 style={{
-                  backgroundColor: "#F5F5F5",
-                  borderTop: "1px solid #E0E0E0",
+                  backgroundColor: priceFlash[product.id]
+                    ? "#FFF3E0"
+                    : "transparent",
+                  transform: priceFlash[product.id]
+                    ? "scale(1.05)"
+                    : "scale(1)",
                 }}
               >
-                <div className="flex justify-between items-center text-xs mb-2">
-                  <div style={{ color: "#616161" }}>
-                    <span className="font-semibold">Category:</span>{" "}
-                    <span style={{ color: "#424242" }}>{product.category}</span>
-                  </div>
-                  <div style={{ color: "#616161" }}>
-                    <span className="font-semibold">Location:</span>{" "}
-                    <span style={{ color: "#424242" }}>{product.location}</span>
-                  </div>
+                <p
+                  className="text-3xl font-bold"
+                  style={{ color: "#1976D2" }}
+                >
+                  ${product.price.toFixed(2)}
+                </p>
+              </div>
+              {/* Availability Badge */}
+              <div
+                className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300"
+                style={{
+                  backgroundColor: product.available ? "#E8F5E9" : "#FFEBEE",
+                  color: product.available ? "#2E7D32" : "#C62828",
+                  transform: availabilityFlash[product.id]
+                    ? "scale(1.1)"
+                    : "scale(1)",
+                  boxShadow: availabilityFlash[product.id]
+                    ? "0 0 0 4px rgba(25, 118, 210, 0.2)"
+                    : "none",
+                }}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full mr-2"
+                  style={{
+                    backgroundColor: product.available
+                      ? "#2E7D32"
+                      : "#C62828",
+                  }}
+                ></span>
+                {product.available ? "Available" : "Unavailable"}
+              </div>
+              <button
+                onClick={() => router.push(`/map?shop=${product.shopId}`)}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                style={{
+                  background: "#E3F2FD",
+                  color: "#1976D2",
+                  border: "1.5px solid #90CAF9",
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "#1976D2";
+                  (e.currentTarget as HTMLButtonElement).style.color = "white";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "#E3F2FD";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#1976D2";
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+                View on Map
+              </button>
+            </div>
+
+            {/* Product Footer */}
+            <div
+              className="px-6 py-4"
+              style={{
+                backgroundColor: "#F5F5F5",
+                borderTop: "1px solid #E0E0E0",
+              }}
+            >
+              <div className="flex justify-between items-center text-xs mb-2">
+                <div style={{ color: "#616161" }}>
+                  <span className="font-semibold">Category:</span>{" "}
+                  <span style={{ color: "#424242" }}>{product.category}</span>
                 </div>
-                <div className="text-xs" style={{ color: "#9E9E9E" }}>
-                  Updated:{" "}
-                  {new Date(product.lastUpdated || "").toLocaleTimeString()}
+                <div style={{ color: "#616161" }}>
+                  <span className="font-semibold">Location:</span>{" "}
+                  <span style={{ color: "#424242" }}>{product.location}</span>
                 </div>
               </div>
+              <div className="text-xs" style={{ color: "#9E9E9E" }}>
+                Updated:{" "}
+                {new Date(product.lastUpdated || "").toLocaleTimeString()}
+              </div>
             </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-16">
-            <svg
-              className="mx-auto h-16 w-16 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="#BDBDBD"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
-            <h3
-              className="text-lg font-semibold mb-2"
-              style={{ color: "#424242" }}
-            >
-              No products found
-            </h3>
-            <p style={{ color: "#757575" }}>Try adjusting your filters</p>
           </div>
-        )}
+        ))
+      ) : (
+        <div className="col-span-full text-center py-12">
+          <h3 className="text-xl font-semibold mb-2" style={{ color: "#212121" }}>
+            No products found
+          </h3>
+          <p style={{ color: "#757575" }}>Try adjusting your filters</p>
+        </div>
+      )}
+    </div>
       </div>
     </div>
   );

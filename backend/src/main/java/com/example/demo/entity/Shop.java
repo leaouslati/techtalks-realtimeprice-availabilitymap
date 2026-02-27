@@ -34,6 +34,7 @@ public class Shop {
     private boolean claimed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Double rating;
 
 @ManyToMany
 @JoinTable(
@@ -47,7 +48,7 @@ private List<Product> products;
 
     public Shop(String name, String address, String contact,
                 Double latitude, Double longitude,
-                boolean claimed, String location, String category) {
+                boolean claimed, String location, String category, Double rating) {
         this.name = name;
         this.address = address;
         this.contact = contact;
@@ -56,6 +57,7 @@ private List<Product> products;
         this.claimed = claimed;
         this.location = location;
         this.category = category;
+        this.rating=rating;
     }
 
     @PrePersist
@@ -117,6 +119,9 @@ private List<Product> products;
     public List<Product> getProducts() {
         return products;
     }
+    public Double getRating() {
+        return rating;
+    }
 
     // ---------------- SETTERS ----------------
 
@@ -154,5 +159,8 @@ private List<Product> products;
 
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+    public void setRating(Double rating) {
+        this.rating = rating;
     }
 }

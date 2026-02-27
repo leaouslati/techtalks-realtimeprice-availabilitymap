@@ -31,7 +31,7 @@ public class DataLoader implements CommandLineRunner {
                 35.4788,   // longitude
                 false,
                 "Beirut",
-                "Electronics"
+                "Electronics",4.5
         );
 
         Shop fashionHub = new Shop(
@@ -42,7 +42,7 @@ public class DataLoader implements CommandLineRunner {
                 35.8497,   // longitude
                 true,
                 "Tripoli",
-                "Clothing"
+                "Clothing",4.0
         );
 
         shopRepository.save(techStore);
@@ -66,6 +66,10 @@ public class DataLoader implements CommandLineRunner {
         // Link products to shops
         laptop.setShops(List.of(techStore));
         tshirt.setShops(List.of(fashionHub));
+
+        // Set shopId for frontend filtering
+        laptop.setShopId(techStore.getId());
+        tshirt.setShopId(fashionHub.getId());
 
         productRepository.save(laptop);
         productRepository.save(tshirt);
