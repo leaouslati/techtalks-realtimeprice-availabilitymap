@@ -67,6 +67,10 @@ public class DataLoader implements CommandLineRunner {
         laptop.setShops(List.of(techStore));
         tshirt.setShops(List.of(fashionHub));
 
+        // Set shopId for frontend filtering
+        laptop.setShopId(techStore.getId());
+        tshirt.setShopId(fashionHub.getId());
+
         productRepository.save(laptop);
         productRepository.save(tshirt);
 

@@ -33,6 +33,9 @@ public class Product {
     @ManyToMany(mappedBy = "products")
     private List<Shop> shops;
 
+    // Add shopId field
+    private Long shopId;
+
     public Product() {}
 
     public Product(String name, double price, String category, boolean available) {
@@ -73,4 +76,7 @@ public class Product {
 
     public List<Shop> getShops() { return shops; }
     public void setShops(List<Shop> shops) { this.shops = shops; }
+
+    public Long getShopId() { return shopId; }
+    public void setShopId(Long shopId) { this.shopId = shopId; }
 }
