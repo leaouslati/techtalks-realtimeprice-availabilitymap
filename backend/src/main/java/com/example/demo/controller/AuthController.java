@@ -1,28 +1,18 @@
 package com.example.demo.controller;
 
-import java.util.Map;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.ChangePasswordRequest;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RegisterRequest;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.dto.UpdateUserRequest;
 import com.example.demo.service.AuthService;
-import com.example.demo.service.JwtService;
 
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PutMapping;
 
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,69 +20,71 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
     
-
-    public AuthController(AuthService authService, JwtService jwtService, UserRepository userRepository) {
-    this.authService = authService;                
-    this.jwtService = jwtService;
-    this.userRepository = userRepository;
-}
-
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegisterRequest request) {
+
         return ResponseEntity.ok(authService.register(request));
     }
 
+    
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
         return ResponseEntity.ok(authService.login(request));
     }
 
+    
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser(@RequestHeader("Authorization") String header) {
+    public ResponseEntity<?> getCurrentUser() {
 
-    String token = header.substring(7);
-    String email = jwtService.extractEmail(token);
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
-    User user = userRepository.findByEmail(email)
-            .orElseThrow();
+        String email = authentication.getName();
 
-    return ResponseEntity.ok(user);
-}
-
-    @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestHeader("Authorization") String header, 
-                                        @RequestBody Map<String, String> request) {
-
-        String token = header.substring(7);
-        String email = jwtService.extractEmail(token);
-
-        User user = userRepository.findByEmail(email).orElseThrow();
-
-        user.setUsername(request.get("username"));
-        userRepository.save(user);
-        
-        return ResponseEntity.ok("Updated");
+        return ResponseEntity.ok(authService.getCurrentUser(email));
     }
 
+   
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(
+            @Valid @RequestBody UpdateUserRequest request) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        authService.updateUser(email, request);
+
+        return ResponseEntity.ok("Updated successfully");
+    }
+
+    
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(
-        @RequestHeader("Authorization") String header,
-        @RequestBody Map<String, String> request) {
+            @Valid @RequestBody ChangePasswordRequest request) {
 
-    String token = header.substring(7);
-    String email = jwtService.extractEmail(token);
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
-    authService.changePassword(
-            email,
-            request.get("oldPassword"),
-            request.get("newPassword")
-    );
+        String email = authentication.getName();
 
-    return ResponseEntity.ok("Password changed");
+        authService.changePassword(
+                email,
+                request.getOldPassword(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok("Password changed successfully");
+    }
 }
-}
-
 
