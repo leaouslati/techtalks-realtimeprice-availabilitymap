@@ -1,8 +1,10 @@
 package com.example.demo.controller;
-
+import com.example.demo.product.Product;
+import com.example.demo.service.*;
 import com.example.demo.entity.Shop;
 import com.example.demo.service.ShopService;
 import org.springframework.web.bind.annotation.*;
+import com.example.demo.product.ProductService;
 
 import java.util.List;
 
@@ -11,11 +13,12 @@ import java.util.List;
 public class ShopController {
 
     private final ShopService shopService;
+    private final ProductService productService;
 
-    public ShopController(ShopService shopService) {
+    public ShopController(ShopService shopService, ProductService productService) {
         this.shopService = shopService;
+        this.productService = productService;
     }
-
     @GetMapping
     public List<Shop> getAllShops() {
         return shopService.getAllShops();
@@ -24,5 +27,9 @@ public class ShopController {
     @GetMapping("/{id}")
     public Shop getShopById(@PathVariable Long id) {
         return shopService.getShopById(id);
+    }
+    @GetMapping("/{id}/products")
+    public List<Product> getProductsByShop(@PathVariable Long id) {
+        return productService.getProductsByShop(id);
     }
 }

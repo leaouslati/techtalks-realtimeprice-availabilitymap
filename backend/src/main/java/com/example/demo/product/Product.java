@@ -2,6 +2,7 @@ package com.example.demo.product;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import com.example.demo.entity.Shop;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 
 @Entity
@@ -19,7 +20,7 @@ public class Product {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "shop_id")
     private Shop shop;

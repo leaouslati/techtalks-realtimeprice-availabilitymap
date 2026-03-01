@@ -60,6 +60,15 @@ public class DataLoader implements CommandLineRunner {
                 true,
                 fashionHub
         );
+        Product phone = new Product("Phone", 800, "Electronics", true, techStore);
+        Product headphones = new Product("Headphones", 150, "Electronics", true, techStore);
+        Product jeans = new Product("Jeans", 60, "Clothing", true, fashionHub);
+        Product jacket = new Product("Jacket", 120, "Clothing", false, fashionHub);
+
+        productRepository.save(phone);
+        productRepository.save(headphones);
+        productRepository.save(jeans);
+        productRepository.save(jacket);
 
         productRepository.save(laptop);
         productRepository.save(tshirt);

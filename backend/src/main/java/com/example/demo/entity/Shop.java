@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import jakarta.persistence.*;
 import com.example.demo.product.Product;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 
 
@@ -30,7 +31,7 @@ public class Shop {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    @JsonManagedReference
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
     private List<Product> products;
 

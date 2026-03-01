@@ -13,7 +13,9 @@ public class ProductService {
     public ProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
-
+    public List<Product> getProductsByShop(Long shopId) {
+        return productRepository.findByShopId(shopId);
+    }
     // Get all products
     public List<Product> getAllProducts() {
         return productRepository.findAll();
@@ -33,4 +35,5 @@ public class ProductService {
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
+
 }
