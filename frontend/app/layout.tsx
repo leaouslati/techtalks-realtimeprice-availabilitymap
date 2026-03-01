@@ -43,7 +43,7 @@ export default function RootLayout({
           zIndex: 1000,
         }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <Image src="/globe.svg" alt="GeoCart logo" width={32} height={32} />
+            <Image src="/logo.png" alt="GeoCart logo" width={44} height={44} />
             <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "16px" }}>GeoCart</span>
           </Link>
           <div style={{ display: "flex", gap: "8px" }}>
