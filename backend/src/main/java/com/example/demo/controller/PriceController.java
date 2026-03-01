@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +24,7 @@ public class PriceController {
 }
 
 @PutMapping("/shops/{shopId}/products/{productId}/price")
+@PreAuthorize("hasRole('SHOP_OWNER')")
 public ResponseEntity<PriceUpdateResponse> updatePrice(
         @PathVariable Long shopId,
         @PathVariable Long productId,
@@ -32,6 +34,7 @@ public ResponseEntity<PriceUpdateResponse> updatePrice(
 }
 
 @PutMapping("/shops/{shopId}/products/{productId}/availability")
+@PreAuthorize("hasRole('SHOP_OWNER')")
 public ResponseEntity<PriceUpdateResponse> updateAvailability(
         @PathVariable Long shopId,
         @PathVariable Long productId,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,12 +43,7 @@ export default function RootLayout({
           zIndex: 1000,
         }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div style={{
-              width: "32px", height: "32px", borderRadius: "8px",
-              background: "#2563eb", color: "white",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: "bold", fontSize: "16px"
-            }}>S</div>
+            <Image src="/logo.png" alt="GeoCart logo" width={44} height={44} />
             <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "16px" }}>GeoCart</span>
           </Link>
           <div style={{ display: "flex", gap: "8px" }}>
