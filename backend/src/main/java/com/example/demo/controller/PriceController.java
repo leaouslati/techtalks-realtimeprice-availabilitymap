@@ -24,7 +24,7 @@ public class PriceController {
 }
 
 @PutMapping("/shops/{shopId}/products/{productId}/price")
-@PreAuthorize("hasRole('SHOP_OWNER')")
+@PreAuthorize("hasAnyRole('SHOP_OWNER','CUSTOMER')")
 public ResponseEntity<PriceUpdateResponse> updatePrice(
         @PathVariable Long shopId,
         @PathVariable Long productId,
@@ -34,7 +34,7 @@ public ResponseEntity<PriceUpdateResponse> updatePrice(
 }
 
 @PutMapping("/shops/{shopId}/products/{productId}/availability")
-@PreAuthorize("hasRole('SHOP_OWNER')")
+@PreAuthorize("hasAnyRole('SHOP_OWNER','CUSTOMER')")
 public ResponseEntity<PriceUpdateResponse> updateAvailability(
         @PathVariable Long shopId,
         @PathVariable Long productId,

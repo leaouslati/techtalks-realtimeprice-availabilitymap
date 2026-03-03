@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getShops } from "@/services/api";
+import { claimShop, getShops } from "@/services/api";
 import { useRouter } from "next/navigation";
 
 type Shop = {
@@ -20,6 +20,9 @@ export default function ShopsPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [claimingShopId, setClaimingShopId] = useState<number | null>(null);
+  const [claimMessage, setClaimMessage] = useState("");
+  const [claimMessageType, setClaimMessageType] = useState<"success" | "error">("success");
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
@@ -45,6 +48,44 @@ export default function ShopsPage() {
     };
     fetchShops();
   }, []);
+
+  const handleClaimShop = async (shopId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setClaimMessageType("error");
+      setClaimMessage("You must log in first to claim a shop.");
+      router.push("/auth");
+      return;
+    }
+
+    try {
+      setClaimingShopId(shopId);
+      setClaimMessage("");
+      await claimShop(shopId, token);
+      setShops((prev) =>
+        prev.map((shop) =>
+          shop.id === shopId ? { ...shop, claimed: true } : shop
+        )
+      );
+      setClaimMessageType("success");
+      setClaimMessage("Shop claimed. Please log out and log back in to get owner permissions.");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (typeof err?.response?.data === "string" ? err.response.data : "Failed to claim shop");
+      setClaimMessageType("error");
+      setClaimMessage(message);
+
+      if (status === 401 || status === 403) {
+        localStorage.removeItem("token");
+        setTimeout(() => router.push("/auth"), 700);
+      }
+    } finally {
+      setClaimingShopId(null);
+    }
+  };
 
   const categories = ["all", ...new Set(shops.map((s) => s.category))];
   const locations = ["all", ...new Set(shops.map((s) => s.location))];
@@ -138,6 +179,14 @@ export default function ShopsPage() {
           <div className="mt-6 text-sm font-medium" style={{ color: "#616161" }}>
             Showing {filteredShops.length} of {shops.length} shops
           </div>
+          {claimMessage && (
+            <div
+              className="mt-4 text-sm font-medium"
+              style={{ color: claimMessageType === "success" ? "#1976D2" : "#D32F2F" }}
+            >
+              {claimMessage}
+            </div>
+          )}
         </div>
 
         {/* Shops Grid */}
@@ -173,6 +222,18 @@ export default function ShopsPage() {
                 >
                   View Products
                 </button>
+
+                {!shop.claimed && (
+                  <button
+                    type="button"
+                    onClick={() => handleClaimShop(shop.id)}
+                    disabled={claimingShopId === shop.id}
+                    className="mt-3 w-full py-3 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-60"
+                    style={{ background: "#1976D2", color: "white", border: "1.5px solid #1976D2" }}
+                  >
+                    {claimingShopId === shop.id ? "Claiming..." : "Claim This Shop"}
+                  </button>
+                )}
               </div>
 
               <div className="px-6 py-4" style={{ backgroundColor: "#F5F5F5", borderTop: "1px solid #E0E0E0" }}>

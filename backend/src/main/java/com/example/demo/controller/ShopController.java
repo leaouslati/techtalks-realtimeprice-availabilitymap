@@ -1,19 +1,22 @@
 package com.example.demo.controller;
 
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.*;
 
-import com.example.demo.service.ShopService;
-import com.example.demo.product.Product;
-import com.example.demo.service.*;
 import com.example.demo.entity.Shop;
-import com.example.demo.service.ShopService;
-
+import com.example.demo.product.Product;
 import com.example.demo.product.ProductService;
-import java.util.List;
+import com.example.demo.service.ShopService;
 
 
 @RestController
@@ -40,5 +43,31 @@ public class ShopController {
     @GetMapping("/{id}/products")
     public List<Product> getProductsByShop(@PathVariable Long id) {
         return productService.getProductsByShop(id);
+    }
+
+    @PostMapping("/{id}/claim")
+    public ResponseEntity<?> claimShop(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        try {
+            Shop claimedShop = shopService.claimShop(id, email);
+            return ResponseEntity.ok(claimedShop);
+        } catch (RuntimeException ex) {
+            String message = ex.getMessage();
+
+            if ("Shop not found".equals(message)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", message));
+            }
+            if ("Shop already claimed".equals(message)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", message));
+            }
+            if ("User not found".equals(message)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Session expired. Please log in again."));
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", message != null ? message : "Failed to claim shop"));
+        }
     }
 }

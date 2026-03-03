@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProducts } from "@/services/api";
+import {
+  getProductsByShop,
+  getShops,
+  updateProductAvailability,
+  updateProductPrice,
+} from "@/services/api";
 import { useRouter } from "next/navigation";
 
 type Product = {
@@ -13,12 +18,19 @@ type Product = {
   shopName?: string;
   available?: boolean;
   shopId?: number;
+  updatedAt?: string;
   lastUpdated?: string;
   prices?: {
     price?: number | string;
     available?: boolean;
     updatedAt?: string;
   }[];
+};
+
+type Shop = {
+  id: number;
+  name: string;
+  location: string;
 };
 
 type PriceChange = {
@@ -41,11 +53,61 @@ const extractPrice = (product: Product): number => {
   return normalizePrice(product.prices?.[0]?.price);
 };
 
+const formatPrice = (product: Product): string => {
+  const direct = Number(product.price);
+  if (Number.isFinite(direct)) {
+    return `$${direct.toFixed(2)}`;
+  }
+
+  const nested = Number(product.prices?.[0]?.price);
+  if (Number.isFinite(nested)) {
+    return `$${nested.toFixed(2)}`;
+  }
+
+  return "N/A";
+};
+
+const getApiErrorMessage = (error: unknown): string => {
+  if (typeof error === "object" && error !== null) {
+    const e = error as {
+      response?: { data?: { message?: string } | string; status?: number };
+      message?: string;
+    };
+
+    if (typeof e.response?.data === "string" && e.response.data.trim()) {
+      return e.response.data;
+    }
+
+    if (e.response?.data && typeof e.response.data === "object") {
+      const msg = (e.response.data as { message?: string }).message;
+      if (msg) return msg;
+    }
+
+    if (e.response?.status) {
+      return `Request failed (${e.response.status})`;
+    }
+
+    if (e.message) {
+      return e.message;
+    }
+  }
+
+  return "Failed to update product.";
+};
+
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [token, setToken] = useState("");
+  const [canUpdate, setCanUpdate] = useState(false);
+  const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
+  const [availabilityInputs, setAvailabilityInputs] = useState<Record<number, boolean>>({});
+  const [editingProducts, setEditingProducts] = useState<Record<number, boolean>>({});
+  const [savingChanges, setSavingChanges] = useState<Record<number, boolean>>({});
+  const [updateMessages, setUpdateMessages] = useState<Record<number, string>>({});
+  const [actionMessage, setActionMessage] = useState<string>("");
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -56,23 +118,67 @@ export default function ProductsPage() {
     useState<AvailabilityChange>({});
 
   useEffect(() => {
+    const savedToken = localStorage.getItem("token") || "";
+    setToken(savedToken);
+
+    if (!savedToken) {
+      setCanUpdate(false);
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(savedToken.split(".")[1]));
+      setCanUpdate(
+        payload?.role === "SHOP_OWNER" || payload?.role === "CUSTOMER"
+      );
+    } catch {
+      setCanUpdate(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await getProducts();
-        const enrichedData = data.map((product: Product) => ({
-          ...product,
-          price: extractPrice(product),
-          shopName: product.shopName || "Generic Shop",
-          available:
-            product.available !== undefined
-              ? product.available
-              : (product.prices?.[0]?.available ?? true),
-          lastUpdated:
-            product.lastUpdated ||
-            product.prices?.[0]?.updatedAt ||
-            new Date().toISOString(),
-        }));
+        const shops: Shop[] = await getShops();
+        const productsByShop = await Promise.all(
+          shops.map(async (shop) => {
+            const shopProducts = await getProductsByShop(shop.id);
+            return shopProducts.map((product: Product) => ({
+              ...product,
+              price: extractPrice(product),
+              shopId: shop.id,
+              shopName: shop.name,
+              location: shop.location,
+              available:
+                product.available !== undefined
+                  ? product.available
+                  : (product.prices?.[0]?.available ?? true),
+              lastUpdated:
+                product.updatedAt ||
+                product.prices?.[0]?.updatedAt ||
+                product.lastUpdated ||
+                new Date().toISOString(),
+            }));
+          })
+        );
+        const enrichedData = productsByShop.flat();
         setProducts(enrichedData);
+        setPriceInputs(
+          Object.fromEntries(
+            enrichedData.map((product) => [
+              product.id,
+              String(product.price ?? ""),
+            ])
+          )
+        );
+        setAvailabilityInputs(
+          Object.fromEntries(
+            enrichedData.map((product) => [
+              product.id,
+              Boolean(product.available),
+            ])
+          )
+        );
       } catch (err) {
         setError("Failed to load products");
       } finally {
@@ -88,20 +194,29 @@ export default function ProductsPage() {
 
     const interval = setInterval(async () => {
       try {
-        const data = await getProducts();
-        const enrichedData = data.map((product: Product) => ({
-          ...product,
-          price: extractPrice(product),
-          shopName: product.shopName || "Generic Shop",
-          available:
-            product.available !== undefined
-              ? product.available
-              : (product.prices?.[0]?.available ?? true),
-          lastUpdated:
-            product.prices?.[0]?.updatedAt ||
-            product.lastUpdated ||
-            new Date().toISOString(),
-        }));
+        const shops: Shop[] = await getShops();
+        const productsByShop = await Promise.all(
+          shops.map(async (shop) => {
+            const shopProducts = await getProductsByShop(shop.id);
+            return shopProducts.map((product: Product) => ({
+              ...product,
+              price: extractPrice(product),
+              shopId: shop.id,
+              shopName: shop.name,
+              location: shop.location,
+              available:
+                product.available !== undefined
+                  ? product.available
+                  : (product.prices?.[0]?.available ?? true),
+              lastUpdated:
+                product.updatedAt ||
+                product.prices?.[0]?.updatedAt ||
+                product.lastUpdated ||
+                new Date().toISOString(),
+            }));
+          })
+        );
+        const enrichedData = productsByShop.flat();
 
         enrichedData.forEach((newProduct: Product) => {
           const oldProduct = products.find((p) => p.id === newProduct.id);
@@ -137,6 +252,91 @@ export default function ProductsPage() {
 
     return () => clearInterval(interval);
   }, [products]);
+
+  const handleSaveChanges = async (product: Product) => {
+    if (!token || !product.shopId) {
+      const msg = "You must be logged in to update products.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      return;
+    }
+
+    const nextPrice = Number(priceInputs[product.id]);
+    if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+      const msg = "Please enter a valid price greater than 0.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      return;
+    }
+    const nextAvailability = availabilityInputs[product.id] ?? Boolean(product.available);
+    const priceChanged = normalizePrice(product.price) !== normalizePrice(nextPrice);
+    const availabilityChanged = Boolean(product.available) !== nextAvailability;
+
+    if (!priceChanged && !availabilityChanged) {
+      const msg = "No changes to save.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      setEditingProducts((prev) => ({ ...prev, [product.id]: false }));
+      return;
+    }
+
+    try {
+      setSavingChanges((prev) => ({ ...prev, [product.id]: true }));
+      setActionMessage("");
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: "" }));
+
+      if (priceChanged) {
+        await updateProductPrice(product.shopId, product.id, nextPrice, token);
+      }
+
+      if (availabilityChanged) {
+        await updateProductAvailability(
+          product.shopId,
+          product.id,
+          nextAvailability,
+          token
+        );
+      }
+
+      setProducts((prev) =>
+        prev.map((item) =>
+          item.id === product.id
+            ? {
+                ...item,
+                price: nextPrice,
+                available: nextAvailability,
+                lastUpdated: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+
+      if (priceChanged) {
+        setPriceFlash((prev) => ({ ...prev, [product.id]: true }));
+        setTimeout(() => {
+          setPriceFlash((prev) => ({ ...prev, [product.id]: false }));
+        }, 1000);
+      }
+
+      if (availabilityChanged) {
+        setAvailabilityFlash((prev) => ({ ...prev, [product.id]: true }));
+        setTimeout(() => {
+          setAvailabilityFlash((prev) => ({ ...prev, [product.id]: false }));
+        }, 500);
+      }
+
+      const msg = "Product updated successfully.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      setEditingProducts((prev) => ({ ...prev, [product.id]: false }));
+    } catch (error) {
+      const msg = getApiErrorMessage(error);
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+    } finally {
+      setSavingChanges((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
 
   const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
 const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).filter(Boolean)))];
@@ -225,6 +425,16 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
           <p className="text-lg" style={{ color: "#616161" }}>
             Live prices. Instant availability
           </p>
+          {canUpdate && (
+            <p className="text-sm mt-2" style={{ color: "#1976D2" }}>
+              Update mode: you can update prices and availability.
+            </p>
+          )}
+          {actionMessage && (
+            <p className="text-sm mt-2" style={{ color: "#424242" }}>
+              {actionMessage}
+            </p>
+          )}
         </div>
 
         {/* Filter Bar */}
@@ -383,7 +593,7 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                   className="text-3xl font-bold"
                   style={{ color: "#1976D2" }}
                 >
-                  ${normalizePrice(product.price).toFixed(2)}
+                  {formatPrice(product)}
                 </p>
               </div>
               {/* Availability Badge */}
@@ -433,6 +643,76 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                 </svg>
                 View on Map
               </button>
+
+              {canUpdate && product.shopId && (
+                <div className="mt-3 space-y-2">
+                  <button
+                    onClick={() =>
+                      setEditingProducts((prev) => ({
+                        ...prev,
+                        [product.id]: !prev[product.id],
+                      }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
+                    style={{
+                      backgroundColor: "#E3F2FD",
+                      color: "#1976D2",
+                      border: "1.5px solid #90CAF9",
+                    }}
+                  >
+                    {editingProducts[product.id] ? "Cancel" : "Update"}
+                  </button>
+
+                  {editingProducts[product.id] && (
+                    <div className="space-y-2 rounded-lg p-3" style={{ backgroundColor: "#F8FBFF" }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={priceInputs[product.id] ?? ""}
+                        onChange={(e) =>
+                          setPriceInputs((prev) => ({
+                            ...prev,
+                            [product.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border-2 text-sm"
+                        style={{ borderColor: "#BDBDBD", color: "#212121" }}
+                      />
+
+                      <select
+                        value={availabilityInputs[product.id] ? "available" : "unavailable"}
+                        onChange={(e) =>
+                          setAvailabilityInputs((prev) => ({
+                            ...prev,
+                            [product.id]: e.target.value === "available",
+                          }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border-2 text-sm"
+                        style={{ borderColor: "#BDBDBD", color: "#212121", backgroundColor: "white" }}
+                      >
+                        <option value="available">Available</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+
+                      <button
+                        onClick={() => handleSaveChanges(product)}
+                        disabled={!!savingChanges[product.id]}
+                        className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
+                        style={{ backgroundColor: "#1976D2", color: "white" }}
+                      >
+                        {savingChanges[product.id] ? "Saving..." : "Save Changes"}
+                      </button>
+
+                      {updateMessages[product.id] && (
+                        <p className="text-xs" style={{ color: "#616161" }}>
+                          {updateMessages[product.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Product Footer */}
