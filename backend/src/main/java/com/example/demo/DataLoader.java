@@ -1,5 +1,4 @@
 package com.example.demo;
-import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -62,14 +61,22 @@ public class DataLoader implements CommandLineRunner {
                 "Clothing",
                 true
         );
+        Product phone = new Product("Phone", 800, "Electronics", true);
+        Product headphones = new Product("Headphones", 150, "Electronics", true);
+        Product jeans = new Product("Jeans", 60, "Clothing", true);
+        Product jacket = new Product("Jacket", 120, "Clothing", false);
 
-        // Link products to shops
-        laptop.setShops(List.of(techStore));
-        tshirt.setShops(List.of(fashionHub));
+        laptop.setShop(techStore);
+        tshirt.setShop(fashionHub);
+        phone.setShop(techStore);
+        headphones.setShop(techStore);
+        jeans.setShop(fashionHub);
+        jacket.setShop(fashionHub);
 
-        // Set shopId for frontend filtering
-        laptop.setShopId(techStore.getId());
-        tshirt.setShopId(fashionHub.getId());
+        productRepository.save(phone);
+        productRepository.save(headphones);
+        productRepository.save(jeans);
+        productRepository.save(jacket);
 
         productRepository.save(laptop);
         productRepository.save(tshirt);

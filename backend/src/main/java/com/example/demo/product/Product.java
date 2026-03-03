@@ -1,15 +1,16 @@
 package com.example.demo.product;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import com.example.demo.entity.Shop;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -30,11 +31,11 @@ public class Product {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @ManyToMany(mappedBy = "products")
-    private List<Shop> shops;
+    @JsonBackReference
+    @ManyToOne
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
 
-    // Add shopId field
-    private Long shopId;
 
     public Product() {}
 
@@ -74,9 +75,6 @@ public class Product {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public List<Shop> getShops() { return shops; }
-    public void setShops(List<Shop> shops) { this.shops = shops; }
-
-    public Long getShopId() { return shopId; }
-    public void setShopId(Long shopId) { this.shopId = shopId; }
+    public Shop getShop() { return shop; }
+    public void setShop(Shop shop) { this.shop = shop; }
 }

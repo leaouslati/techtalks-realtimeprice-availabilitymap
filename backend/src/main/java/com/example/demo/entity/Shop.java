@@ -4,14 +4,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.demo.product.Product;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -34,16 +34,12 @@ public class Shop {
     private boolean claimed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
+    private List<Product> products;
     private Double rating;
-
-@ManyToMany
-@JoinTable(
-    name = "shop_products",
-    joinColumns = @JoinColumn(name = "shop_id"),
-    inverseJoinColumns = @JoinColumn(name = "product_id")
-)
-private List<Product> products;
-
     public Shop() {}
 
     public Shop(String name, String address, String contact,
