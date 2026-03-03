@@ -52,4 +52,14 @@ on terminal:
 - Backend runs on:
   http://localhost:8080
 
+## Run the Frontend
+Requirements:
+- Node.js 18+ (or latest LTS)
+- npm or yarn
 
+- Run frontend: 
+cd frontend
+npm install
+npm run dev
+
+Frontend runs on: http://localhost:3000
