@@ -61,5 +61,18 @@ Requirements:
 cd frontend
 npm install
 npm run dev
+- Frontend runs on: http://localhost:3000
 
-Frontend runs on: http://localhost:3000
+## Environment Variables
+
+This project uses a `.env` file for configuration.  
+You need to create a `.env` file in the **frontend** folder (it is **not included in GitHub** for security reasons).
+
+Example `.env`:
+
+```env
+# Backend API URL (local development)
+NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# Google Maps API key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
