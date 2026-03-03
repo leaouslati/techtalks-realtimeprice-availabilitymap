@@ -51,8 +51,11 @@ export default function ProfilePage() {
       });
       if (!res.ok) throw new Error("Failed to fetch profile");
       const data = await res.json();
-      setUser(data);
-      setForm((f) => ({ ...f, name: data.name }));
+      const resolvedName = data.username || data.usernamee || data.name || "User";
+      const resolvedEmail = data.email || "";
+      const resolvedRole = data.role || "USER";
+      setUser({ name: resolvedName, email: resolvedEmail, role: resolvedRole });
+      setForm((f) => ({ ...f, name: resolvedName }));
     } catch {
       const token = localStorage.getItem("token");
       if (token) {
@@ -96,7 +99,7 @@ export default function ProfilePage() {
       const res = await fetch(`${API_URL}/api/auth/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: form.name }),
+        body: JSON.stringify({ username: form.name }),
       });
       if (!res.ok) throw new Error("Failed to update name");
       setUser((u) => u ? { ...u, name: form.name } : u);
@@ -121,7 +124,7 @@ export default function ProfilePage() {
       const res = await fetch(`${API_URL}/api/auth/change-password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword }),
+        body: JSON.stringify({ oldPassword: form.currentPassword, newPassword: form.newPassword }),
       });
       if (!res.ok) {
         const data = await res.json();

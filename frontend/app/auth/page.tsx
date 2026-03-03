@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { registerUser, loginUser } from "../../services/authService";
 import styles from "./auth.module.css";
 
@@ -21,6 +22,7 @@ interface FormErrors {
 }
 
 export default function AuthPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -54,12 +56,23 @@ export default function AuthPage() {
       if (mode === "register") {
         const res = await registerUser(form.name, form.email, form.password);
         localStorage.setItem("token", res.token);
-        setApiMsg({ type: "success", text: "Account created successfully! Welcome 🎉" });
+        setApiMsg({ type: "success", text: "Account created successfully! Redirecting..." });
+        router.push("/products");
       } else {
         const res = await loginUser(form.email, form.password);
         localStorage.setItem("token", res.token);
-        setApiMsg({ type: "success", text: "Logged in successfully! Redirecting to map..." });
-        // TODO: router.push("/map")
+        let role = "USER";
+        try {
+          const payload = JSON.parse(atob(res.token.split(".")[1]));
+          role = payload?.role || "USER";
+        } catch {}
+
+        setApiMsg({ type: "success", text: "Logged in successfully! Redirecting..." });
+        if (role === "SHOP_OWNER") {
+          router.push("/owner/claim");
+        } else {
+          router.push("/products");
+        }
       }
     } catch (err: any) {
       setApiMsg({ type: "error", text: err.message });

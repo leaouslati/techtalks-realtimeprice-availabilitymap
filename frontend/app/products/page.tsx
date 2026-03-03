@@ -53,16 +53,60 @@ const extractPrice = (product: Product): number => {
   return normalizePrice(product.prices?.[0]?.price);
 };
 
+const formatPrice = (product: Product): string => {
+  const direct = Number(product.price);
+  if (Number.isFinite(direct)) {
+    return `$${direct.toFixed(2)}`;
+  }
+
+  const nested = Number(product.prices?.[0]?.price);
+  if (Number.isFinite(nested)) {
+    return `$${nested.toFixed(2)}`;
+  }
+
+  return "N/A";
+};
+
+const getApiErrorMessage = (error: unknown): string => {
+  if (typeof error === "object" && error !== null) {
+    const e = error as {
+      response?: { data?: { message?: string } | string; status?: number };
+      message?: string;
+    };
+
+    if (typeof e.response?.data === "string" && e.response.data.trim()) {
+      return e.response.data;
+    }
+
+    if (e.response?.data && typeof e.response.data === "object") {
+      const msg = (e.response.data as { message?: string }).message;
+      if (msg) return msg;
+    }
+
+    if (e.response?.status) {
+      return `Request failed (${e.response.status})`;
+    }
+
+    if (e.message) {
+      return e.message;
+    }
+  }
+
+  return "Failed to update product.";
+};
+
 export default function ProductsPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [token, setToken] = useState("");
-  const [isShopOwner, setIsShopOwner] = useState(false);
+  const [canUpdate, setCanUpdate] = useState(false);
   const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
-  const [updatingPrice, setUpdatingPrice] = useState<Record<number, boolean>>({});
-  const [updatingAvailability, setUpdatingAvailability] = useState<Record<number, boolean>>({});
+  const [availabilityInputs, setAvailabilityInputs] = useState<Record<number, boolean>>({});
+  const [editingProducts, setEditingProducts] = useState<Record<number, boolean>>({});
+  const [savingChanges, setSavingChanges] = useState<Record<number, boolean>>({});
+  const [updateMessages, setUpdateMessages] = useState<Record<number, string>>({});
   const [actionMessage, setActionMessage] = useState<string>("");
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -78,15 +122,17 @@ export default function ProductsPage() {
     setToken(savedToken);
 
     if (!savedToken) {
-      setIsShopOwner(false);
+      setCanUpdate(false);
       return;
     }
 
     try {
       const payload = JSON.parse(atob(savedToken.split(".")[1]));
-      setIsShopOwner(payload?.role === "SHOP_OWNER");
+      setCanUpdate(
+        payload?.role === "SHOP_OWNER" || payload?.role === "CUSTOMER"
+      );
     } catch {
-      setIsShopOwner(false);
+      setCanUpdate(false);
     }
   }, []);
 
@@ -122,6 +168,14 @@ export default function ProductsPage() {
             enrichedData.map((product) => [
               product.id,
               String(product.price ?? ""),
+            ])
+          )
+        );
+        setAvailabilityInputs(
+          Object.fromEntries(
+            enrichedData.map((product) => [
+              product.id,
+              Boolean(product.available),
             ])
           )
         );
@@ -199,69 +253,57 @@ export default function ProductsPage() {
     return () => clearInterval(interval);
   }, [products]);
 
-  const handlePriceUpdate = async (product: Product) => {
+  const handleSaveChanges = async (product: Product) => {
     if (!token || !product.shopId) {
-      setActionMessage("You must be logged in as shop owner to update prices.");
+      const msg = "You must be logged in to update products.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
       return;
     }
 
     const nextPrice = Number(priceInputs[product.id]);
     if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
-      setActionMessage("Please enter a valid price greater than 0.");
+      const msg = "Please enter a valid price greater than 0.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      return;
+    }
+    const nextAvailability = availabilityInputs[product.id] ?? Boolean(product.available);
+    const priceChanged = normalizePrice(product.price) !== normalizePrice(nextPrice);
+    const availabilityChanged = Boolean(product.available) !== nextAvailability;
+
+    if (!priceChanged && !availabilityChanged) {
+      const msg = "No changes to save.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      setEditingProducts((prev) => ({ ...prev, [product.id]: false }));
       return;
     }
 
     try {
-      setUpdatingPrice((prev) => ({ ...prev, [product.id]: true }));
+      setSavingChanges((prev) => ({ ...prev, [product.id]: true }));
       setActionMessage("");
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: "" }));
 
-      await updateProductPrice(product.shopId, product.id, nextPrice, token);
+      if (priceChanged) {
+        await updateProductPrice(product.shopId, product.id, nextPrice, token);
+      }
 
-      setProducts((prev) =>
-        prev.map((item) =>
-          item.id === product.id
-            ? { ...item, price: nextPrice, lastUpdated: new Date().toISOString() }
-            : item
-        )
-      );
-
-      setPriceFlash((prev) => ({ ...prev, [product.id]: true }));
-      setTimeout(() => {
-        setPriceFlash((prev) => ({ ...prev, [product.id]: false }));
-      }, 1000);
-
-      setActionMessage("Price updated successfully.");
-    } catch {
-      setActionMessage("Failed to update price.");
-    } finally {
-      setUpdatingPrice((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handleAvailabilityUpdate = async (product: Product) => {
-    if (!token || !product.shopId) {
-      setActionMessage("You must be logged in as shop owner to update availability.");
-      return;
-    }
-
-    const nextAvailability = !product.available;
-
-    try {
-      setUpdatingAvailability((prev) => ({ ...prev, [product.id]: true }));
-      setActionMessage("");
-
-      await updateProductAvailability(
-        product.shopId,
-        product.id,
-        nextAvailability,
-        token
-      );
+      if (availabilityChanged) {
+        await updateProductAvailability(
+          product.shopId,
+          product.id,
+          nextAvailability,
+          token
+        );
+      }
 
       setProducts((prev) =>
         prev.map((item) =>
           item.id === product.id
             ? {
                 ...item,
+                price: nextPrice,
                 available: nextAvailability,
                 lastUpdated: new Date().toISOString(),
               }
@@ -269,16 +311,30 @@ export default function ProductsPage() {
         )
       );
 
-      setAvailabilityFlash((prev) => ({ ...prev, [product.id]: true }));
-      setTimeout(() => {
-        setAvailabilityFlash((prev) => ({ ...prev, [product.id]: false }));
-      }, 500);
+      if (priceChanged) {
+        setPriceFlash((prev) => ({ ...prev, [product.id]: true }));
+        setTimeout(() => {
+          setPriceFlash((prev) => ({ ...prev, [product.id]: false }));
+        }, 1000);
+      }
 
-      setActionMessage("Availability updated successfully.");
-    } catch {
-      setActionMessage("Failed to update availability.");
+      if (availabilityChanged) {
+        setAvailabilityFlash((prev) => ({ ...prev, [product.id]: true }));
+        setTimeout(() => {
+          setAvailabilityFlash((prev) => ({ ...prev, [product.id]: false }));
+        }, 500);
+      }
+
+      const msg = "Product updated successfully.";
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
+      setEditingProducts((prev) => ({ ...prev, [product.id]: false }));
+    } catch (error) {
+      const msg = getApiErrorMessage(error);
+      setActionMessage(msg);
+      setUpdateMessages((prev) => ({ ...prev, [product.id]: msg }));
     } finally {
-      setUpdatingAvailability((prev) => ({ ...prev, [product.id]: false }));
+      setSavingChanges((prev) => ({ ...prev, [product.id]: false }));
     }
   };
 
@@ -369,9 +425,9 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
           <p className="text-lg" style={{ color: "#616161" }}>
             Live prices. Instant availability
           </p>
-          {isShopOwner && (
+          {canUpdate && (
             <p className="text-sm mt-2" style={{ color: "#1976D2" }}>
-              Shop owner mode: you can update prices and availability.
+              Update mode: you can update prices and availability.
             </p>
           )}
           {actionMessage && (
@@ -537,7 +593,7 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                   className="text-3xl font-bold"
                   style={{ color: "#1976D2" }}
                 >
-                  ${normalizePrice(product.price).toFixed(2)}
+                  {formatPrice(product)}
                 </p>
               </div>
               {/* Availability Badge */}
@@ -588,35 +644,15 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                 View on Map
               </button>
 
-              {isShopOwner && product.shopId && (
+              {canUpdate && product.shopId && (
                 <div className="mt-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={priceInputs[product.id] ?? ""}
-                      onChange={(e) =>
-                        setPriceInputs((prev) => ({
-                          ...prev,
-                          [product.id]: e.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2 rounded-lg border-2 text-sm"
-                      style={{ borderColor: "#BDBDBD", color: "#212121" }}
-                    />
-                    <button
-                      onClick={() => handlePriceUpdate(product)}
-                      disabled={!!updatingPrice[product.id]}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold"
-                      style={{ backgroundColor: "#1976D2", color: "white" }}
-                    >
-                      {updatingPrice[product.id] ? "Saving..." : "Save"}
-                    </button>
-                  </div>
                   <button
-                    onClick={() => handleAvailabilityUpdate(product)}
-                    disabled={!!updatingAvailability[product.id]}
+                    onClick={() =>
+                      setEditingProducts((prev) => ({
+                        ...prev,
+                        [product.id]: !prev[product.id],
+                      }))
+                    }
                     className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
                     style={{
                       backgroundColor: "#E3F2FD",
@@ -624,12 +660,57 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                       border: "1.5px solid #90CAF9",
                     }}
                   >
-                    {updatingAvailability[product.id]
-                      ? "Saving..."
-                      : product.available
-                      ? "Mark Unavailable"
-                      : "Mark Available"}
+                    {editingProducts[product.id] ? "Cancel" : "Update"}
                   </button>
+
+                  {editingProducts[product.id] && (
+                    <div className="space-y-2 rounded-lg p-3" style={{ backgroundColor: "#F8FBFF" }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={priceInputs[product.id] ?? ""}
+                        onChange={(e) =>
+                          setPriceInputs((prev) => ({
+                            ...prev,
+                            [product.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border-2 text-sm"
+                        style={{ borderColor: "#BDBDBD", color: "#212121" }}
+                      />
+
+                      <select
+                        value={availabilityInputs[product.id] ? "available" : "unavailable"}
+                        onChange={(e) =>
+                          setAvailabilityInputs((prev) => ({
+                            ...prev,
+                            [product.id]: e.target.value === "available",
+                          }))
+                        }
+                        className="w-full px-3 py-2 rounded-lg border-2 text-sm"
+                        style={{ borderColor: "#BDBDBD", color: "#212121", backgroundColor: "white" }}
+                      >
+                        <option value="available">Available</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+
+                      <button
+                        onClick={() => handleSaveChanges(product)}
+                        disabled={!!savingChanges[product.id]}
+                        className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
+                        style={{ backgroundColor: "#1976D2", color: "white" }}
+                      >
+                        {savingChanges[product.id] ? "Saving..." : "Save Changes"}
+                      </button>
+
+                      {updateMessages[product.id] && (
+                        <p className="text-xs" style={{ color: "#616161" }}>
+                          {updateMessages[product.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

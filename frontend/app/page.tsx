@@ -24,7 +24,32 @@ type Product = {
   available?: boolean;
   shopId?: number;
   shopName?: string;
+  updatedAt?: string;
   lastUpdated?: string;
+  prices?: {
+    price?: number | string;
+    available?: boolean;
+    updatedAt?: string;
+  }[];
+};
+
+const normalizePrice = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatPrice = (product: Product): string => {
+  const direct = Number(product.price);
+  if (Number.isFinite(direct)) {
+    return `$${direct.toFixed(2)}`;
+  }
+
+  const nested = Number(product.prices?.[0]?.price);
+  if (Number.isFinite(nested)) {
+    return `$${nested.toFixed(2)}`;
+  }
+
+  return "N/A";
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -62,7 +87,18 @@ export default function HomePage() {
         setProducts(
           p.map((prod: Product) => ({
             ...prod,
-            lastUpdated: prod.lastUpdated || new Date().toISOString(),
+            price: Number.isFinite(Number(prod.price))
+              ? normalizePrice(prod.price)
+              : normalizePrice(prod.prices?.[0]?.price),
+            available:
+              prod.available !== undefined
+                ? prod.available
+                : (prod.prices?.[0]?.available ?? true),
+            lastUpdated:
+              prod.lastUpdated ||
+              prod.updatedAt ||
+              prod.prices?.[0]?.updatedAt ||
+              new Date().toISOString(),
           })),
         );
       })
@@ -711,7 +747,7 @@ export default function HomePage() {
                         {product.shopName || "Local Shop"}
                       </div>
                       <div className="product-price">
-                        ${product.price?.toFixed(2)}
+                        {formatPrice(product)}
                       </div>
                       <div
                         className="product-avail"

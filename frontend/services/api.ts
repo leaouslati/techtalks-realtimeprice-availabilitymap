@@ -43,3 +43,12 @@ export const updateProductAvailability = async (
   );
   return response.data;
 };
+
+export const claimShop = async (shopId: number, token: string) => {
+  const response = await axios.post(
+    `${API_BASE_URL}/api/shops/${shopId}/claim`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
