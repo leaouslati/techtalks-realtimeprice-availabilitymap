@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getProducts } from "@/services/api";
+import { getProductsByShop } from "@/services/api";
 
 interface Product {
   id: number;
@@ -10,21 +10,26 @@ interface Product {
   category: string;
   price: number;
   available: boolean;
-  shopId: number;
-  lastUpdated?: string;
+  updatedAt?: string;
 }
 
 export default function ShopProductsPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const shopId = Number(params.id);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProducts = async () => {
+      if (Number.isNaN(shopId)) {
+        setError("Invalid shop id");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const allProducts = await getProducts();
-        const shopProducts = allProducts.filter((p: Product) => p.shopId === Number(id));
+        const shopProducts = await getProductsByShop(shopId);
         setProducts(shopProducts);
       } catch (err) {
         setError("Failed to load products");
@@ -33,7 +38,7 @@ export default function ShopProductsPage() {
       }
     };
     fetchProducts();
-  }, [id]);
+  }, [shopId]);
 
   if (loading) {
     return (
@@ -96,7 +101,7 @@ export default function ShopProductsPage() {
                     </div>
                   </div>
                   <div className="text-xs" style={{ color: "#9E9E9E" }}>
-                    Updated: {new Date(product.lastUpdated || "").toLocaleTimeString()}
+                    Updated: {product.updatedAt ? new Date(product.updatedAt).toLocaleTimeString() : "N/A"}
                   </div>
                 </div>
               </div>

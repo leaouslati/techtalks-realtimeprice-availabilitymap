@@ -10,3 +10,8 @@ export const getShops = async () => {
   const response = await axios.get(`${API_BASE_URL}/api/shops`);
   return response.data;
 };
+
+export const getProductsByShop = async (shopId: number) => {
+  const response = await axios.get(`${API_BASE_URL}/api/shops/${shopId}/products`);
+  return response.data;
+};
