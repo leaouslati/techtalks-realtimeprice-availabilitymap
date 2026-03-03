@@ -1,13 +1,16 @@
 package com.example.demo.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.PriceUpdateResponse;
 import com.example.demo.dto.UpdateAvailabilityRequest;
 import com.example.demo.dto.UpdatePriceRequest;
 import com.example.demo.entity.Price;
+import com.example.demo.event.PriceUpdatedEvent;
 import com.example.demo.repository.PriceRepository;
 
 import jakarta.transaction.Transactional;
@@ -15,9 +18,12 @@ import jakarta.transaction.Transactional;
 @Service
 public class PriceService {
      private final PriceRepository priceRepository;
+     private final ApplicationEventPublisher eventPublisher;
 
-     public PriceService(PriceRepository priceRepository) {
-    this.priceRepository = priceRepository;
+     public PriceService(PriceRepository priceRepository, ApplicationEventPublisher eventPublisher) {
+
+        this.priceRepository = priceRepository;
+        this.eventPublisher = eventPublisher;
 }
     
 @Transactional
@@ -30,15 +36,28 @@ public PriceUpdateResponse updatePrice(
         .findByProduct_IdAndShop_Id(productId, shopId)
         .orElseThrow(() -> new RuntimeException("Price not found"));
 
-   if (request.getNewPrice() <= 0) {
+   BigDecimal oldPrice = price.getPrice();
+   BigDecimal newPrice = request.getNewPrice();
+
+   if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
     throw new IllegalArgumentException("Price must be greater than zero");
 }
 
-    Double oldPrice = price.getPrice();
+    if(oldPrice.compareTo(newPrice) != 0 ){
 
-    price.setPrice(request.getNewPrice());
+    price.setPrice(newPrice);
     price.setUpdatedAt(LocalDateTime.now());
-    price.setUpdatedBy(1L);//replace with authenticated user ID
+    price.setUpdatedBy(1L);//replace with authenticated user ID 
+    eventPublisher.publishEvent(
+        new PriceUpdatedEvent(
+            productId,
+            shopId,
+            oldPrice,
+            newPrice,
+            price.getUpdatedAt()
+        )
+    );
+    }
 
     priceRepository.save(price);
 
@@ -77,5 +96,7 @@ public PriceUpdateResponse updateAvailability(
     price.getUpdatedAt()
 );
 }
+
+
 }
 

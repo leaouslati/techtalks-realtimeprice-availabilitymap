@@ -14,6 +14,11 @@ type Product = {
   available?: boolean;
   shopId?: number;
   lastUpdated?: string;
+  prices?: {
+    price?: number | string;
+    available?: boolean;
+    updatedAt?: string;
+  }[];
 };
 
 type PriceChange = {
@@ -22,6 +27,18 @@ type PriceChange = {
 
 type AvailabilityChange = {
   [key: number]: boolean;
+};
+
+const normalizePrice = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const extractPrice = (product: Product): number => {
+  if (Number.isFinite(Number(product.price))) {
+    return normalizePrice(product.price);
+  }
+  return normalizePrice(product.prices?.[0]?.price);
 };
 
 export default function ProductsPage() {
@@ -44,9 +61,16 @@ export default function ProductsPage() {
         const data = await getProducts();
         const enrichedData = data.map((product: Product) => ({
           ...product,
+          price: extractPrice(product),
           shopName: product.shopName || "Generic Shop",
-          available: product.available !== undefined ? product.available : true,
-          lastUpdated: product.lastUpdated || new Date().toISOString(),
+          available:
+            product.available !== undefined
+              ? product.available
+              : (product.prices?.[0]?.available ?? true),
+          lastUpdated:
+            product.lastUpdated ||
+            product.prices?.[0]?.updatedAt ||
+            new Date().toISOString(),
         }));
         setProducts(enrichedData);
       } catch (err) {
@@ -67,12 +91,16 @@ export default function ProductsPage() {
         const data = await getProducts();
         const enrichedData = data.map((product: Product) => ({
           ...product,
+          price: extractPrice(product),
           shopName: product.shopName || "Generic Shop",
           available:
             product.available !== undefined
               ? product.available
-              : Math.random() > 0.3,
-          lastUpdated: new Date().toISOString(),
+              : (product.prices?.[0]?.available ?? true),
+          lastUpdated:
+            product.prices?.[0]?.updatedAt ||
+            product.lastUpdated ||
+            new Date().toISOString(),
         }));
 
         enrichedData.forEach((newProduct: Product) => {
@@ -355,7 +383,7 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                   className="text-3xl font-bold"
                   style={{ color: "#1976D2" }}
                 >
-                  ${product.price.toFixed(2)}
+                  ${normalizePrice(product.price).toFixed(2)}
                 </p>
               </div>
               {/* Availability Badge */}
