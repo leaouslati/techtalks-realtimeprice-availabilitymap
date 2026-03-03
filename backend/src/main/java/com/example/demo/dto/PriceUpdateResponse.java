@@ -1,13 +1,14 @@
 package com.example.demo.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
     public class PriceUpdateResponse {
     private String type;
     private Long productId;
     private Long shopId;
-    private Double oldPrice;
-    private Double newPrice;
+    private BigDecimal oldPrice;
+    private BigDecimal newPrice;
     private LocalDateTime updatedAt;
 
     //contructor
@@ -15,8 +16,8 @@ import java.time.LocalDateTime;
         String type,
         Long productId,
         Long shopId,
-        Double oldPrice,
-        Double newPrice,
+        BigDecimal oldPrice,
+        BigDecimal newPrice,
         LocalDateTime updatedAt) {
 
     this.type = type;
@@ -37,10 +38,10 @@ import java.time.LocalDateTime;
     public Long getShopId(){
         return shopId;
     }
-    public Double getOldPrice(){
+    public BigDecimal getOldPrice(){
         return oldPrice;
     }
-    public Double getNewPrice(){
+    public BigDecimal getNewPrice(){
         return newPrice;
     }
     public LocalDateTime getUpdatedAt(){
@@ -57,10 +58,10 @@ import java.time.LocalDateTime;
     public void setShopID(Long shopId){
         this.shopId = shopId;
     }
-    public void setOldPrice(Double oldPrice){
+    public void setOldPrice(BigDecimal oldPrice){
         this.oldPrice = oldPrice;
     }
-    public void setNewPrice(Double newPrice){
+    public void setNewPrice(BigDecimal newPrice){
         this.newPrice = newPrice;
     }
     public void setUpdatedAt(LocalDateTime updatedAt){

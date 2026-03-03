@@ -3,10 +3,8 @@ package com.example.demo.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.example.demo.product.Product;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,12 +32,12 @@ public class Shop {
     private boolean claimed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
-    private List<Product> products;
     private Double rating;
+
+    @JsonManagedReference(value = "shop-prices")
+    @OneToMany(mappedBy = "shop")
+    private List<Price> prices;
+
     public Shop() {}
 
     public Shop(String name, String address, String contact,
@@ -53,7 +51,7 @@ public class Shop {
         this.claimed = claimed;
         this.location = location;
         this.category = category;
-        this.rating=rating;
+        this.rating = rating;
     }
 
     @PrePersist
@@ -65,8 +63,6 @@ public class Shop {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
-    // ---------------- GETTERS ----------------
 
     public Long getId() {
         return id;
@@ -112,14 +108,13 @@ public class Shop {
         return updatedAt;
     }
 
-    public List<Product> getProducts() {
-        return products;
-    }
     public Double getRating() {
         return rating;
     }
 
-    // ---------------- SETTERS ----------------
+    public List<Price> getPrices() {
+        return prices;
+    }
 
     public void setName(String name) {
         this.name = name;
@@ -153,10 +148,11 @@ public class Shop {
         this.claimed = claimed;
     }
 
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
     public void setRating(Double rating) {
         this.rating = rating;
+    }
+
+    public void setPrices(List<Price> prices) {
+        this.prices = prices;
     }
 }

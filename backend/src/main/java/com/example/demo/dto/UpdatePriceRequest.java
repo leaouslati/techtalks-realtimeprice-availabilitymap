@@ -1,19 +1,21 @@
 package com.example.demo.dto;
 
+import java.math.BigDecimal;
+
 public class UpdatePriceRequest {
 
 
-    private double newPrice;
+    private BigDecimal newPrice;
    
     //constructer
     public UpdatePriceRequest(){
         
     }
 
-    public double getNewPrice(){
+    public BigDecimal getNewPrice(){
         return newPrice;
     }
-    public void setNewPrice(double newPrice){
+    public void setNewPrice(BigDecimal newPrice){
         this.newPrice = newPrice;
     }
 
