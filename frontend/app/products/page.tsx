@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProducts } from "@/services/api";
+import {
+  getProductsByShop,
+  getShops,
+  updateProductAvailability,
+  updateProductPrice,
+} from "@/services/api";
 import { useRouter } from "next/navigation";
 
 type Product = {
@@ -13,12 +18,19 @@ type Product = {
   shopName?: string;
   available?: boolean;
   shopId?: number;
+  updatedAt?: string;
   lastUpdated?: string;
   prices?: {
     price?: number | string;
     available?: boolean;
     updatedAt?: string;
   }[];
+};
+
+type Shop = {
+  id: number;
+  name: string;
+  location: string;
 };
 
 type PriceChange = {
@@ -46,6 +58,12 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [token, setToken] = useState("");
+  const [isShopOwner, setIsShopOwner] = useState(false);
+  const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
+  const [updatingPrice, setUpdatingPrice] = useState<Record<number, boolean>>({});
+  const [updatingAvailability, setUpdatingAvailability] = useState<Record<number, boolean>>({});
+  const [actionMessage, setActionMessage] = useState<string>("");
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -56,23 +74,57 @@ export default function ProductsPage() {
     useState<AvailabilityChange>({});
 
   useEffect(() => {
+    const savedToken = localStorage.getItem("token") || "";
+    setToken(savedToken);
+
+    if (!savedToken) {
+      setIsShopOwner(false);
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(savedToken.split(".")[1]));
+      setIsShopOwner(payload?.role === "SHOP_OWNER");
+    } catch {
+      setIsShopOwner(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await getProducts();
-        const enrichedData = data.map((product: Product) => ({
-          ...product,
-          price: extractPrice(product),
-          shopName: product.shopName || "Generic Shop",
-          available:
-            product.available !== undefined
-              ? product.available
-              : (product.prices?.[0]?.available ?? true),
-          lastUpdated:
-            product.lastUpdated ||
-            product.prices?.[0]?.updatedAt ||
-            new Date().toISOString(),
-        }));
+        const shops: Shop[] = await getShops();
+        const productsByShop = await Promise.all(
+          shops.map(async (shop) => {
+            const shopProducts = await getProductsByShop(shop.id);
+            return shopProducts.map((product: Product) => ({
+              ...product,
+              price: extractPrice(product),
+              shopId: shop.id,
+              shopName: shop.name,
+              location: shop.location,
+              available:
+                product.available !== undefined
+                  ? product.available
+                  : (product.prices?.[0]?.available ?? true),
+              lastUpdated:
+                product.updatedAt ||
+                product.prices?.[0]?.updatedAt ||
+                product.lastUpdated ||
+                new Date().toISOString(),
+            }));
+          })
+        );
+        const enrichedData = productsByShop.flat();
         setProducts(enrichedData);
+        setPriceInputs(
+          Object.fromEntries(
+            enrichedData.map((product) => [
+              product.id,
+              String(product.price ?? ""),
+            ])
+          )
+        );
       } catch (err) {
         setError("Failed to load products");
       } finally {
@@ -88,20 +140,29 @@ export default function ProductsPage() {
 
     const interval = setInterval(async () => {
       try {
-        const data = await getProducts();
-        const enrichedData = data.map((product: Product) => ({
-          ...product,
-          price: extractPrice(product),
-          shopName: product.shopName || "Generic Shop",
-          available:
-            product.available !== undefined
-              ? product.available
-              : (product.prices?.[0]?.available ?? true),
-          lastUpdated:
-            product.prices?.[0]?.updatedAt ||
-            product.lastUpdated ||
-            new Date().toISOString(),
-        }));
+        const shops: Shop[] = await getShops();
+        const productsByShop = await Promise.all(
+          shops.map(async (shop) => {
+            const shopProducts = await getProductsByShop(shop.id);
+            return shopProducts.map((product: Product) => ({
+              ...product,
+              price: extractPrice(product),
+              shopId: shop.id,
+              shopName: shop.name,
+              location: shop.location,
+              available:
+                product.available !== undefined
+                  ? product.available
+                  : (product.prices?.[0]?.available ?? true),
+              lastUpdated:
+                product.updatedAt ||
+                product.prices?.[0]?.updatedAt ||
+                product.lastUpdated ||
+                new Date().toISOString(),
+            }));
+          })
+        );
+        const enrichedData = productsByShop.flat();
 
         enrichedData.forEach((newProduct: Product) => {
           const oldProduct = products.find((p) => p.id === newProduct.id);
@@ -137,6 +198,89 @@ export default function ProductsPage() {
 
     return () => clearInterval(interval);
   }, [products]);
+
+  const handlePriceUpdate = async (product: Product) => {
+    if (!token || !product.shopId) {
+      setActionMessage("You must be logged in as shop owner to update prices.");
+      return;
+    }
+
+    const nextPrice = Number(priceInputs[product.id]);
+    if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+      setActionMessage("Please enter a valid price greater than 0.");
+      return;
+    }
+
+    try {
+      setUpdatingPrice((prev) => ({ ...prev, [product.id]: true }));
+      setActionMessage("");
+
+      await updateProductPrice(product.shopId, product.id, nextPrice, token);
+
+      setProducts((prev) =>
+        prev.map((item) =>
+          item.id === product.id
+            ? { ...item, price: nextPrice, lastUpdated: new Date().toISOString() }
+            : item
+        )
+      );
+
+      setPriceFlash((prev) => ({ ...prev, [product.id]: true }));
+      setTimeout(() => {
+        setPriceFlash((prev) => ({ ...prev, [product.id]: false }));
+      }, 1000);
+
+      setActionMessage("Price updated successfully.");
+    } catch {
+      setActionMessage("Failed to update price.");
+    } finally {
+      setUpdatingPrice((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  const handleAvailabilityUpdate = async (product: Product) => {
+    if (!token || !product.shopId) {
+      setActionMessage("You must be logged in as shop owner to update availability.");
+      return;
+    }
+
+    const nextAvailability = !product.available;
+
+    try {
+      setUpdatingAvailability((prev) => ({ ...prev, [product.id]: true }));
+      setActionMessage("");
+
+      await updateProductAvailability(
+        product.shopId,
+        product.id,
+        nextAvailability,
+        token
+      );
+
+      setProducts((prev) =>
+        prev.map((item) =>
+          item.id === product.id
+            ? {
+                ...item,
+                available: nextAvailability,
+                lastUpdated: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+
+      setAvailabilityFlash((prev) => ({ ...prev, [product.id]: true }));
+      setTimeout(() => {
+        setAvailabilityFlash((prev) => ({ ...prev, [product.id]: false }));
+      }, 500);
+
+      setActionMessage("Availability updated successfully.");
+    } catch {
+      setActionMessage("Failed to update availability.");
+    } finally {
+      setUpdatingAvailability((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
 
   const categories = ["all", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))];
 const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).filter(Boolean)))];
@@ -225,6 +369,16 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
           <p className="text-lg" style={{ color: "#616161" }}>
             Live prices. Instant availability
           </p>
+          {isShopOwner && (
+            <p className="text-sm mt-2" style={{ color: "#1976D2" }}>
+              Shop owner mode: you can update prices and availability.
+            </p>
+          )}
+          {actionMessage && (
+            <p className="text-sm mt-2" style={{ color: "#424242" }}>
+              {actionMessage}
+            </p>
+          )}
         </div>
 
         {/* Filter Bar */}
@@ -433,6 +587,51 @@ const locations = ["all", ...Array.from(new Set(products.map((p) => p.location).
                 </svg>
                 View on Map
               </button>
+
+              {isShopOwner && product.shopId && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={priceInputs[product.id] ?? ""}
+                      onChange={(e) =>
+                        setPriceInputs((prev) => ({
+                          ...prev,
+                          [product.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-lg border-2 text-sm"
+                      style={{ borderColor: "#BDBDBD", color: "#212121" }}
+                    />
+                    <button
+                      onClick={() => handlePriceUpdate(product)}
+                      disabled={!!updatingPrice[product.id]}
+                      className="px-3 py-2 rounded-lg text-sm font-semibold"
+                      style={{ backgroundColor: "#1976D2", color: "white" }}
+                    >
+                      {updatingPrice[product.id] ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => handleAvailabilityUpdate(product)}
+                    disabled={!!updatingAvailability[product.id]}
+                    className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
+                    style={{
+                      backgroundColor: "#E3F2FD",
+                      color: "#1976D2",
+                      border: "1.5px solid #90CAF9",
+                    }}
+                  >
+                    {updatingAvailability[product.id]
+                      ? "Saving..."
+                      : product.available
+                      ? "Mark Unavailable"
+                      : "Mark Available"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Product Footer */}

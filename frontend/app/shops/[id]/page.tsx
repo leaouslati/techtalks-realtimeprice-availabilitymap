@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getProductsByShop } from "@/services/api";
+import { getProductsByShop, getShops } from "@/services/api";
 
 interface Product {
   id: number;
@@ -11,12 +11,30 @@ interface Product {
   price: number;
   available: boolean;
   updatedAt?: string;
+  prices?: {
+    price?: number | string;
+    available?: boolean;
+    updatedAt?: string;
+  }[];
 }
+
+interface Shop {
+  id: number;
+  name: string;
+  location: string;
+}
+
+const normalizePrice = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 export default function ShopProductsPage() {
   const params = useParams();
   const shopId = Number(params.id);
   const [products, setProducts] = useState<Product[]>([]);
+  const [shopName, setShopName] = useState("Shop");
+  const [shopLocation, setShopLocation] = useState("N/A");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -29,8 +47,25 @@ export default function ShopProductsPage() {
       }
 
       try {
-        const shopProducts = await getProductsByShop(shopId);
-        setProducts(shopProducts);
+        const [shopProducts, shops] = await Promise.all([
+          getProductsByShop(shopId),
+          getShops(),
+        ]);
+
+        const currentShop = (shops as Shop[]).find((shop) => Number(shop.id) === shopId);
+        setShopName(currentShop?.name || `Shop #${shopId}`);
+        setShopLocation(currentShop?.location || "N/A");
+
+        const enrichedProducts = (shopProducts as Product[]).map((product) => ({
+          ...product,
+          price: normalizePrice(product.price ?? product.prices?.[0]?.price),
+          available:
+            product.available !== undefined
+              ? product.available
+              : (product.prices?.[0]?.available ?? true),
+          updatedAt: product.updatedAt || product.prices?.[0]?.updatedAt,
+        }));
+        setProducts(enrichedProducts);
       } catch (err) {
         setError("Failed to load products");
       } finally {
@@ -63,7 +98,7 @@ export default function ShopProductsPage() {
     <div className="min-h-screen py-8 px-4" style={{ backgroundColor: "#E3F2FD" }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-3" style={{ color: "#1976D2" }}>Shop Products</h1>
+          <h1 className="text-4xl font-bold mb-3" style={{ color: "#1976D2" }}>{shopName}</h1>
           <p className="text-lg" style={{ color: "#616161" }}>Products available in this shop</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -97,7 +132,7 @@ export default function ShopProductsPage() {
                       <span className="font-semibold">Category:</span> <span style={{ color: "#424242" }}>{product.category}</span>
                     </div>
                     <div style={{ color: "#616161" }}>
-                      <span className="font-semibold">Price:</span> <span style={{ color: "#424242" }}>${product.price.toFixed(2)}</span>
+                      <span className="font-semibold">Location:</span> <span style={{ color: "#424242" }}>{shopLocation}</span>
                     </div>
                   </div>
                   <div className="text-xs" style={{ color: "#9E9E9E" }}>

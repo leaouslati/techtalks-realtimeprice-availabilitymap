@@ -15,3 +15,31 @@ export const getProductsByShop = async (shopId: number) => {
   const response = await axios.get(`${API_BASE_URL}/api/shops/${shopId}/products`);
   return response.data;
 };
+
+export const updateProductPrice = async (
+  shopId: number,
+  productId: number,
+  newPrice: number,
+  token: string
+) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/api/shops/${shopId}/products/${productId}/price`,
+    { newPrice },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+export const updateProductAvailability = async (
+  shopId: number,
+  productId: number,
+  available: boolean,
+  token: string
+) => {
+  const response = await axios.put(
+    `${API_BASE_URL}/api/shops/${shopId}/products/${productId}/availability`,
+    { available },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
